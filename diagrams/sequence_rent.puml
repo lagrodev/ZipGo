@@ -1,0 +1,73 @@
+@startuml CreateRent
+!theme plain
+skinparam sequenceMessageAlign center
+
+actor "Пользователь" as User
+participant "CarDetailFragment" as Detail
+participant "ViewModel" as VM
+participant "ContractRepository" as Repo
+participant "Retrofit/OkHttp" as Net
+participant "Backend API" as API
+participant "Navigation" as Nav
+
+User -> Detail: Просмотр деталей авто
+activate Detail
+
+User -> Detail: Выбор дат аренды
+User -> Detail: Нажатие "Забронировать"
+
+Detail -> VM: createContract(\n  carId,\n  startDate,\n  endDate\n)
+activate VM
+
+VM -> Repo: createContract(contractData)
+activate Repo
+
+Repo -> Net: POST /api/contracts\n  {carId, dates}
+activate Net
+Net -> API: POST /api/contracts\n  {carId, dates}
+activate API
+
+alt Успех
+    API --> Net: {contractId,\n  status: PENDING}
+    deactivate API
+
+    Net --> Repo: Success(contract)
+    deactivate Net
+    
+    Repo --> VM: Success(contract)
+    deactivate Repo
+    
+    VM --> Detail: ContractCreated
+    deactivate VM
+    
+    Detail -> Nav: Navigate to Contracts
+    activate Nav
+    
+    Nav -> User: Показать список контрактов
+    deactivate Nav
+    
+else Ошибка (авто недоступно)
+    API --> Net: Error 409 (Conflict)
+    deactivate API
+
+    Net --> Repo: Error 409 (Conflict)
+    deactivate Net
+    
+    note over API,Repo
+        Backend возвращает конфликт,
+        если авто уже забронировано
+        на выбранные даты
+    end note
+    
+    Repo --> VM: Error(message)
+    deactivate Repo
+    
+    VM --> Detail: ShowError
+    deactivate VM
+    
+    Detail -> User: "Авто недоступно\nв эти даты"
+end
+
+deactivate Detail
+
+@enduml

@@ -1,0 +1,13 @@
+package org.example.carshering.repository;
+
+import org.example.carshering.entity.auth.VerificationCode;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface CodeRepository extends JpaRepository<VerificationCode, Long> {
+
+    Optional<VerificationCode> findByCode(String code);
+
+    Optional<VerificationCode> findByCodeAndTypeIs(String code, VerificationCode.VerificationCodeType verificationCodeType);
+}

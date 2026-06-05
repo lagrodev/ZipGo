@@ -1,0 +1,214 @@
+# =============================================================================
+# Docker Compose для Car Sharing Microservices
+# =============================================================================
+# Архитектура:
+# - Auth Service (порт 8083) - аутентификация и авторизация
+# - Car Sharing Service (порт 8082) - бизнес-логика каршеринга
+# - PostgreSQL - две отдельные БД (auth_db, car_sharing_db)
+# - MinIO - хранение фото автомобилей
+# - MailDev - тестовый SMTP сервер
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: car-sharing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - car-sharing-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Auth Service
+  # ---------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - "${AUTH_SERVICE_PORT:-8083}:8083"
+    environment:
+      # Database
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${AUTH_DB_NAME:-auth_db}
+      DATABASE_USERNAME: ${AUTH_DB_USER:-postgres}
+      DATABASE_PASSWORD: ${AUTH_DB_PASSWORD:-postgres}
+      
+      # JWT
+      RSA_PRIVATE_KEY: ${RSA_PRIVATE_KEY}
+      RSA_PUBLIC_KEY: ${RSA_PUBLIC_KEY}
+      JWT_ACCESS_TOKEN_TTL: ${JWT_ACCESS_TOKEN_TTL:-30m}
+      JWT_REFRESH_TOKEN_TTL: ${JWT_REFRESH_TOKEN_TTL:-7d}
+      JWT_ISSUER: ${JWT_ISSUER:-auth-service}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-car-sharing-platform}
+      
+      # Server
+      SERVER_PORT: 8083
+      
+      # CORS
+      CORS_ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost:5176}
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK:-INFO}
+      LOGGING_LEVEL_ORG_EXAMPLE: ${LOGGING_LEVEL_ORG_EXAMPLE:-DEBUG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - car-sharing-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  # ---------------------------------------------------------------------------
+  # Car Sharing Service
+  # ---------------------------------------------------------------------------
+  car-sharing-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: car-sharing-service
+    restart: unless-stopped
+    ports:
+      - "${CAR_SHARING_SERVICE_PORT:-8082}:8082"
+    environment:
+      # Database
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${CAR_SHARING_DB_NAME:-car_sharing_db}
+      DATABASE_USERNAME: ${CAR_SHARING_DB_USER:-postgres}
+      DATABASE_PASSWORD: ${CAR_SHARING_DB_PASSWORD:-postgres}
+      DATABASE_SCHEMA: car_rental
+      
+      # JWT (только public key для проверки токенов!)
+      RSA_PUBLIC_KEY: ${RSA_PUBLIC_KEY}
+      JWT_ISSUER: ${JWT_ISSUER:-auth-service}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-car-sharing-platform}
+      JWT_ACCESS_TOKEN_TTL: ${JWT_ACCESS_TOKEN_TTL:-30m}
+      
+      # Auth Service
+      AUTH_SERVICE_URL: http://auth-service:8083
+      
+      # Server
+      SERVER_PORT: 8082
+      SERVER_ADDRESS: 0.0.0.0
+      
+      # CORS
+      CORS_ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost:5176}
+      
+      # Frontend
+      FRONTEND_HOST: localhost
+      FRONTEND_PORT: 5176
+      
+      # MinIO
+      MINIO_URL: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-admin12345}
+      MINIO_BUCKET: ${MINIO_BUCKET:-car-photos}
+      
+      # Email
+      MAIL_HOST: maildev
+      MAIL_PORT: ${MAILDEV_SMTP_PORT:-1025}
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      
+      # Spring
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK:-INFO}
+      LOGGING_LEVEL_ORG_EXAMPLE: ${LOGGING_LEVEL_ORG_EXAMPLE:-DEBUG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      maildev:
+        condition: service_started
+    networks:
+      - car-sharing-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  # ---------------------------------------------------------------------------
+  # MinIO (S3-compatible storage)
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: car-sharing-minio
+    restart: unless-stopped
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-admin12345}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - car-sharing-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # MailDev (SMTP testing)
+  # ---------------------------------------------------------------------------
+  maildev:
+    image: maildev/maildev:latest
+    container_name: car-sharing-maildev
+    restart: unless-stopped
+    ports:
+      - "${MAILDEV_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILDEV_WEB_PORT:-1080}:1080"   # Web UI
+    networks:
+      - car-sharing-network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  car-sharing-network:
+    driver: bridge
+    name: car-sharing-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    name: car-sharing-postgres-data
+  minio_data:
+    name: car-sharing-minio-data

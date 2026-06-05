@@ -1,0 +1,116 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'androidx.navigation.safeargs.kotlin'
+    id 'kotlin-parcelize'
+}
+
+android {
+    namespace 'com.example.carcatalogue' // ← ЭТА СТРОКА ОБЯЗАТЕЛЬНА
+
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.carcatalogue"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        viewBinding true // ← убедитесь, что это включено
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('carsharing-release.keystore')
+            storePassword 'CarSharing2026!'
+            keyAlias 'carsharing'
+            keyPassword 'CarSharing2026!'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation libs.androidx.work.runtime.ktx
+    implementation libs.navigation.fragment.ktx
+    implementation libs.navigation.ui.ktx
+    coreLibraryDesugaring libs.desugar.jdk.libs
+
+    // Keep Kotlin stdlib versions consistent with the Kotlin Gradle plugin
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:1.9.22")
+
+    // Core Android
+    implementation libs.androidx.core.ktx.v1131
+    implementation libs.androidx.appcompat.v161
+    implementation libs.androidx.constraintlayout.v214
+    
+    // Fragment and Navigation
+    implementation libs.androidx.fragment.ktx
+    implementation libs.androidx.navigation.fragment.ktx
+    implementation libs.androidx.navigation.ui.ktx
+
+    // Material Design 3
+    implementation libs.material
+
+    // Lifecycle components
+    //noinspection GradleDependency
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    //noinspection GradleDependency
+    implementation libs.androidx.lifecycle.livedata.ktx
+    //noinspection GradleDependency
+    implementation libs.androidx.lifecycle.runtime.ktx
+
+    // Coroutines
+    //noinspection NewerVersionAvailable
+    implementation libs.kotlinx.coroutines.android
+    //noinspection NewerVersionAvailable
+    implementation libs.kotlinx.coroutines.core
+
+    // DataStore for token storage
+    implementation libs.androidx.datastore.preferences
+
+    // Retrofit + Gson
+    implementation libs.retrofit
+    //noinspection NewerVersionAvailable
+    implementation libs.converter.gson
+    //noinspection NewerVersionAvailable
+    implementation libs.logging.interceptor
+
+    // Coil for image loading
+    //noinspection NewerVersionAvailable
+    implementation libs.coil
+
+    // SwipeRefreshLayout
+    implementation libs.androidx.swiperefreshlayout
+
+    // ViewPager2
+    implementation libs.androidx.viewpager2
+
+    // Testing
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit.v115
+    androidTestImplementation libs.androidx.espresso.core.v351
+}

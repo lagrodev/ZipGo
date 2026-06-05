@@ -1,0 +1,9 @@
+package org.example.carshering.repository;
+
+import org.example.carshering.entity.user.DocumentType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+
+@Repository
+public interface DocumentTypeRepository extends JpaRepository<DocumentType, Long> {}

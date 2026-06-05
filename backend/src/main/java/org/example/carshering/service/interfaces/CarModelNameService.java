@@ -1,0 +1,15 @@
+package org.example.carshering.service.interfaces;
+
+import org.example.carshering.dto.request.create.CreateCarModelName;
+import org.example.carshering.dto.response.ModelNameResponse;
+import org.example.carshering.entity.cars.Model;
+
+import java.util.List;
+
+public interface CarModelNameService {
+    ModelNameResponse createModelName(CreateCarModelName request);
+
+    List<String> findAllModels();
+
+    Model getModelByName(String name);
+}

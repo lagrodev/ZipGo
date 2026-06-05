@@ -1,0 +1,183 @@
+### =============================================================================
+### Auth Service API - Примеры запросов
+### =============================================================================
+### Для использования в VS Code установите расширение "REST Client"
+### или используйте Postman/Insomnia
+### =============================================================================
+
+@authServiceUrl = http://localhost:8083
+@carSharingUrl = http://localhost:8082
+
+### =============================================================================
+### 1. Health Check - Auth Service
+### =============================================================================
+
+GET {{authServiceUrl}}/actuator/health
+Content-Type: application/json
+
+### =============================================================================
+### 2. Регистрация нового пользователя
+### =============================================================================
+
+POST {{authServiceUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Test123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phoneNumber": "+1234567890"
+}
+
+### =============================================================================
+### 3. Логин (получение токенов)
+### =============================================================================
+
+# @name login
+POST {{authServiceUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Test123!"
+}
+
+### Сохраняем токены для последующих запросов
+@accessToken = {{login.response.body.access_token}}
+@refreshToken = {{login.response.body.refresh_token}}
+
+### =============================================================================
+### 4. Обновление access token через refresh token
+### =============================================================================
+
+POST {{authServiceUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### =============================================================================
+### 5. Получение информации о текущем пользователе
+### =============================================================================
+
+GET {{authServiceUrl}}/api/auth/me
+Authorization: Bearer {{accessToken}}
+
+### =============================================================================
+### 6. Логаут
+### =============================================================================
+
+POST {{authServiceUrl}}/api/auth/logout
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### =============================================================================
+### Car Sharing Service API (с токеном от Auth Service)
+### =============================================================================
+
+### Health Check - Car Sharing
+GET {{carSharingUrl}}/actuator/health
+
+### Получить список автомобилей (требует авторизацию)
+GET {{carSharingUrl}}/api/cars
+Authorization: Bearer {{accessToken}}
+
+### Получить профиль пользователя
+GET {{carSharingUrl}}/api/profile
+Authorization: Bearer {{accessToken}}
+
+### =============================================================================
+### Примеры для Admin (требуется роль ADMIN)
+### =============================================================================
+
+### Регистрация админа (если есть endpoint)
+POST {{authServiceUrl}}/api/auth/register/admin
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "admin@example.com",
+  "password": "Admin123!",
+  "firstName": "Admin",
+  "lastName": "User"
+}
+
+### Список всех пользователей (только для админа)
+GET {{authServiceUrl}}/api/admin/users
+Authorization: Bearer {{accessToken}}
+
+### =============================================================================
+### Error Cases (для тестирования обработки ошибок)
+### =============================================================================
+
+### Неверный пароль
+POST {{authServiceUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "WrongPassword123"
+}
+
+### Несуществующий пользователь
+POST {{authServiceUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "Test123!"
+}
+
+### Запрос без токена (должен вернуть 401)
+GET {{carSharingUrl}}/api/cars
+
+### Невалидный токен
+GET {{carSharingUrl}}/api/cars
+Authorization: Bearer invalid_token_here
+
+### =============================================================================
+### Batch Registration (для тестирования)
+### =============================================================================
+
+### User 1
+POST {{authServiceUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "User123!",
+  "firstName": "Alice",
+  "lastName": "Smith"
+}
+
+###
+
+### User 2
+POST {{authServiceUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "User123!",
+  "firstName": "Bob",
+  "lastName": "Johnson"
+}
+
+###
+
+### User 3
+POST {{authServiceUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user3@example.com",
+  "password": "User123!",
+  "firstName": "Charlie",
+  "lastName": "Brown"
+}

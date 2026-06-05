@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <!-- Auth Screens -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.carcatalogue.ui.auth.LoginFragment"
+        android:label="Login">
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_catalogueFragment"
+            app:destination="@id/catalogueFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.carcatalogue.ui.auth.RegisterFragment"
+        android:label="Register" />
+
+    <!-- Main Screens -->
+    <fragment
+        android:id="@+id/catalogueFragment"
+        android:name="com.example.carcatalogue.ui.catalogue.CatalogueFragment"
+        android:label="Car Catalogue">
+        <action
+            android:id="@+id/action_catalogueFragment_to_carDetailFragment"
+            app:destination="@id/carDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/carDetailFragment"
+        android:name="com.example.carcatalogue.ui.car_detail.CarDetailFragment"
+        android:label="Car Details">
+        <argument
+            android:name="carId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_carDetailFragment_to_createContractFragment"
+            app:destination="@id/createContractFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/contractsFragment"
+        android:name="com.example.carcatalogue.ui.contracts.ContractsFragment"
+        android:label="My Contracts">
+        <action
+            android:id="@+id/action_contractsFragment_to_contractDetailFragment"
+            app:destination="@id/contractDetailFragment" />
+        <action
+            android:id="@+id/action_contractsFragment_to_catalogueFragment"
+            app:destination="@id/catalogueFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/favoritesFragment"
+        android:name="com.example.carcatalogue.ui.favorites.FavoritesFragment"
+        android:label="Favorites">
+        <action
+            android:id="@+id/action_favoritesFragment_to_carDetailFragment"
+            app:destination="@id/carDetailFragment" />
+        <action
+            android:id="@+id/action_favoritesFragment_to_catalogueFragment"
+            app:destination="@id/catalogueFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/contractDetailFragment"
+        android:name="com.example.carcatalogue.ui.contracts.ContractDetailFragment"
+        android:label="Contract Details">
+        <argument
+            android:name="contractId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/createContractFragment"
+        android:name="com.example.carcatalogue.ui.contracts.CreateContractFragment"
+        android:label="Create Contract">
+        <argument
+            android:name="carId"
+            app:argType="long" />
+        <argument
+            android:name="dailyRate"
+            android:defaultValue="0.0"
+            app:argType="float" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.carcatalogue.ui.profile.ProfileFragment"
+        android:label="Profile">
+        <action
+            android:id="@+id/action_profileFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_changePasswordFragment"
+            app:destination="@id/changePasswordFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.example.carcatalogue.ui.profile.EditProfileFragment"
+        android:label="Edit Profile" />
+
+    <fragment
+        android:id="@+id/changePasswordFragment"
+        android:name="com.example.carcatalogue.ui.profile.ChangePasswordFragment"
+        android:label="Change Password" />
+
+</navigation>
