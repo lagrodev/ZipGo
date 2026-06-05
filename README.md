@@ -43,3 +43,9 @@
 |------|-------------|
 | [Melnik_V_A.docx](docs/Melnik_V_A.docx) | курсач      |
 | [Melnik_V_A.pptx](docs/Melnik_V_A.pptx) | Презентация |
+
+## Посмотреть всю эту гадость
+
+https://drive.google.com/file/d/1eOsrYrpbzwT2erBk2Dn2rb3su6Y6Nwj7/view?usp=sharing
+
+https://drive.google.com/file/d/17Xg8qkbY_xxJlsg7usgGOtXxRZTWmISQ/view?usp=drive_link
